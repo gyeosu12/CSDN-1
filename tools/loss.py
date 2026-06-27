@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch
+import torch.nn.functional as F
 
 
 class CrossEntropyLabelSmooth(nn.Module):
@@ -91,7 +92,20 @@ class TripletLoss_WRT(nn.Module):
 
         return loss
 
+class KLDivergenceLoss_V2(nn.Module):
+    def __init__(self, temp=1.):
+        super(KLDivergenceLoss_V2, self).__init__()
+        self.kl = nn.KLDivLoss(reduction='batchmean')
+        self.t = temp
 
+    def forward(self, logit1, logit2):
+        prob1 = F.softmax(logit1/self.t, dim=1)
+        prob2 = F.softmax(logit2/self.t, dim=1)
+        prob1 = (prob1[::4] + prob1[1::4] + prob1[2::4] + prob1[3::4])/4
+        prob2 = (prob2[::4] + prob2[1::4] + prob2[2::4] + prob2[3::4])/4
+        loss = self.t * self.t * self.kl(torch.log(prob1), prob2.detach())
+        loss += self.t * self.t * self.kl(torch.log(prob2), prob1.detach())
+        return loss / 2.
 
 
 

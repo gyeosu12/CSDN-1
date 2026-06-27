@@ -58,7 +58,7 @@ class Loader:
         self.img_h = config.img_h
 
         self.num_pos = config.num_pos
-        self.stage1_batch_size = config.stage1_batch_size
+        self.text_batch_size = config.text_batch_size
         self.batch_size = config.batch_size
 
 
@@ -176,18 +176,18 @@ class Loader:
                                          int(self.batch_size / self.num_pos))
         self.normal_samples.cIndex = normal_sampler.index1
         self.normal_samples.tIndex = normal_sampler.index2
-        normal_train_loader = data.DataLoader(self.normal_samples, batch_size=self.stage1_batch_size,
+        normal_train_loader = data.DataLoader(self.normal_samples, batch_size=self.text_batch_size,
                                        sampler=normal_sampler, num_workers=self.num_workers, drop_last=True)
         return normal_train_loader
 
     def get_stage1_rgb_loader(self, rgb_samples):
         datset = Dataset(rgb_samples.samples, transform=self.transform_test)
-        train_loader = data.DataLoader(datset, batch_size=self.stage1_batch_size, num_workers=self.num_workers,
+        train_loader = data.DataLoader(datset, batch_size=self.text_batch_size, num_workers=self.num_workers,
                                        shuffle=True, drop_last=True)
         return train_loader
 
     def get_stage1_ir_loader(self, ir_samples):
         datset = Dataset(ir_samples.samples, transform=self.transform_test)
-        train_loader = data.DataLoader(datset, batch_size=self.stage1_batch_size, num_workers=self.num_workers,
+        train_loader = data.DataLoader(datset, batch_size=self.text_batch_size, num_workers=self.num_workers,
                                        shuffle=True, drop_last=True)
         return train_loader

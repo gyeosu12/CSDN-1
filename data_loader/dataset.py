@@ -7,10 +7,10 @@ from PIL import Image
 
 class SYSUData(data.Dataset):
     def __init__(self, data_dir, transform1=None, transform2=None, transform3=None, colorIndex=None, thermalIndex=None):
-        train_color_image = np.load(data_dir + 'train_rgb_resized_img.npy')
+        train_color_image = np.load(data_dir + 'train_rgb_resized_img_288.npy')
         self.train_color_label = np.load(data_dir + 'train_rgb_resized_label.npy')
 
-        train_thermal_image = np.load(data_dir + 'train_ir_resized_img.npy')
+        train_thermal_image = np.load(data_dir + 'train_ir_resized_img_288.npy')
         self.train_thermal_label = np.load(data_dir + 'train_ir_resized_label.npy')
 
         # RGB format
@@ -38,10 +38,10 @@ class SYSUData(data.Dataset):
 
 class SYSUDataNormalSamples(data.Dataset):
     def __init__(self, data_dir, transform1=None, transform2=None, colorIndex=None, thermalIndex=None):
-        train_color_image = np.load(data_dir + 'train_rgb_resized_img.npy')
+        train_color_image = np.load(data_dir + 'train_rgb_resized_img_288.npy')
         self.train_color_label = np.load(data_dir + 'train_rgb_resized_label.npy')
 
-        train_thermal_image = np.load(data_dir + 'train_ir_resized_img.npy')
+        train_thermal_image = np.load(data_dir + 'train_ir_resized_img_288.npy')
         self.train_thermal_label = np.load(data_dir + 'train_ir_resized_label.npy')
 
         # RGB format
@@ -67,7 +67,7 @@ class SYSUDataNormalSamples(data.Dataset):
 
 class SYSUDataRGBNormalSamples:
     def __init__(self, data_dir):
-        train_color_image = np.load(data_dir + 'train_rgb_resized_img.npy')
+        train_color_image = np.load(data_dir + 'train_rgb_resized_img_288.npy')
         self.train_color_label = np.load(data_dir + 'train_rgb_resized_label.npy')
 
         # RGB format
@@ -85,7 +85,7 @@ class SYSUDataRGBNormalSamples:
 
 class SYSUDataIRNormalSamples:
     def __init__(self, data_dir):
-        train_thermal_image = np.load(data_dir + 'train_ir_resized_img.npy')
+        train_thermal_image = np.load(data_dir + 'train_ir_resized_img_288.npy')
         self.train_thermal_label = np.load(data_dir + 'train_ir_resized_label.npy')
 
         # RGB format

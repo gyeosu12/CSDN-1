@@ -3,6 +3,7 @@ import torch
 import torchvision
 import torch.nn as nn
 from .gem_pool import GeneralizedMeanPoolingP
+import torch.nn.functional as F
 
 class Normalize(nn.Module):
     def __init__(self, power=2):
@@ -234,6 +235,7 @@ class Model(nn.Module):
         self.prompt_learner2 = PromptLearner2(num_classes, clip_model.dtype, clip_model.token_embedding)
         self.text_encoder = TextEncoder(clip_model)
         self.attention_fusion = AttentionFusion(1024)
+
 
     def forward(self, x1=None, x2=None, label1=None, label2=None, label=None, get_image=False, get_text=False,
                 get_fusion_text=False):
