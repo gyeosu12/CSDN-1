@@ -1,0 +1,35 @@
+# datasets
+data/
+dataset/
+SYSU-MM01/
+RegDB/
+
+# generated npy files
+*.npy
+*.pkl
+*.mat
+
+# checkpoints
+*.pth
+*.pt
+*.ckpt
+checkpoint/
+checkpoints/
+save_model/
+models/
+
+# logs/results
+logs/
+log/
+results/
+result/
+output/
+runs/
+
+# python cache
+__pycache__/
+*.pyc
+
+# IDE
+.idea/
+.vscode/
