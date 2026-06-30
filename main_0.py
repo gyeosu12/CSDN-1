@@ -6,7 +6,7 @@ import random
 import argparse
 import numpy as np
 
-os.environ["CUDA_VISIBLE_DEVICES"]= "1"
+os.environ["CUDA_VISIBLE_DEVICES"]= "0"
 from data_loader.loader import Loader
 from core import BaseSingleStage, train_single_stage, train_stage1, train_stage2, test
 from tools import make_dirs, Logger, os_walk, time_now
@@ -159,7 +159,7 @@ if __name__ == '__main__':
                         help='num of pos per identity in each modality')
     parser.add_argument('--num_workers', default=8, type=int,
                         help='num of pos per identity in each modality')
-    parser.add_argument('--output_path', type=str, default='models/ema/',
+    parser.add_argument('--output_path', type=str, default='models_0/textprompt/',
                         help='path to save related informations')
     parser.add_argument('--max_save_model_num', type=int, default=1, help='0 for max num is infinit')
     parser.add_argument('--resume_train_epoch', type=int, default=-1, help='-1 for no resuming')

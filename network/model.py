@@ -208,6 +208,147 @@ class AttentionFusion(nn.Module):
         new_text_features = new_text_features.view(batch_size, self.embed_dim) + text_features1
         return new_text_features
 
+class BidirectionalReliabilityAttentionFusion(nn.Module):
+    def __init__(self, embed_dim, dropout_rate=0.1, reduction=4, share_branch=True):
+        super(BidirectionalReliabilityAttentionFusion, self).__init__()
+
+        self.embed_dim = embed_dim
+        self.share_branch = share_branch
+
+        self.v_to_r = AttentionFusion(embed_dim)
+
+        if share_branch:
+            self.r_to_v = self.v_to_r
+        else:
+            self.r_to_v = AttentionFusion(embed_dim)
+
+        hidden_dim = max(embed_dim // reduction, 64)
+
+        self.gate = nn.Sequential(
+            nn.LayerNorm(embed_dim * 4),
+            nn.Linear(embed_dim * 4, hidden_dim),
+            nn.GELU(),
+            nn.Dropout(dropout_rate),
+            nn.Linear(hidden_dim, embed_dim),
+            nn.Sigmoid()
+        )
+
+        nn.init.zeros_(self.gate[-2].weight)
+        nn.init.zeros_(self.gate[-2].bias)
+
+    def forward(self, text_features1, text_features2):
+        assert text_features1.dim() == 2, \
+            f"text_features1 should be [B, D], but got {text_features1.shape}"
+        assert text_features2.dim() == 2, \
+            f"text_features2 should be [B, D], but got {text_features2.shape}"
+        assert text_features1.shape == text_features2.shape, \
+            f"feature shape mismatch: {text_features1.shape} vs {text_features2.shape}"
+
+        f_tv = text_features1
+        f_tr = text_features2
+
+        f_vr = self.v_to_r(f_tv, f_tr)
+        f_rv = self.r_to_v(f_tr, f_tv)
+
+        diff = torch.abs(f_vr - f_rv)
+        prod = f_vr * f_rv
+
+        gate_input = torch.cat(
+            [f_vr, f_rv, diff, prod],
+            dim=1
+        )
+
+        g = self.gate(gate_input)
+
+        f_ts = g * f_vr + (1.0 - g) * f_rv
+        f_ts = F.normalize(f_ts, dim=1)
+
+        return f_ts
+
+    class SafeBiRAF(nn.Module):
+        def __init__(self, embed_dim, max_res_scale=0.2):
+            super(SafeBiRAF, self).__init__()
+
+            self.embed_dim = embed_dim
+            self.max_res_scale = max_res_scale
+
+            self.v_to_r = AttentionFusion(embed_dim)
+            self.r_to_v = AttentionFusion(embed_dim)
+
+            hidden_dim = max(embed_dim // 4, 64)
+
+            self.gate = nn.Sequential(
+                nn.LayerNorm(embed_dim * 4),
+                nn.Linear(embed_dim * 4, hidden_dim),
+                nn.GELU(),
+                nn.Linear(hidden_dim, embed_dim),
+                nn.Sigmoid()
+            )
+
+            self.res_scale_logit = nn.Parameter(torch.tensor(-4.0))
+
+            nn.init.zeros_(self.gate[-2].weight)
+            nn.init.zeros_(self.gate[-2].bias)
+
+        def forward(self, text_features1, text_features2):
+            f_base = self.v_to_r(text_features1, text_features2)
+            f_rev = self.r_to_v(text_features2, text_features1)
+
+            diff = torch.abs(f_base - f_rev)
+            prod = f_base * f_rev
+            gate_input = torch.cat([f_base, f_rev, diff, prod], dim=1)
+
+            g = self.gate(gate_input)
+
+            res_scale = self.max_res_scale * torch.sigmoid(self.res_scale_logit)
+            delta = g * (f_rev - f_base)
+
+            f_ts = f_base + res_scale * delta
+
+            return f_ts
+
+class SafeBiRAF(nn.Module):
+    def __init__(self, embed_dim, max_res_scale=0.2):
+        super(SafeBiRAF, self).__init__()
+
+        self.embed_dim = embed_dim
+        self.max_res_scale = max_res_scale
+
+        self.v_to_r = AttentionFusion(embed_dim)
+        self.r_to_v = AttentionFusion(embed_dim)
+
+        hidden_dim = max(embed_dim // 4, 64)
+
+        self.gate = nn.Sequential(
+            nn.LayerNorm(embed_dim * 4),
+            nn.Linear(embed_dim * 4, hidden_dim),
+            nn.GELU(),
+            nn.Linear(hidden_dim, embed_dim),
+            nn.Sigmoid()
+        )
+
+        self.res_scale_logit = nn.Parameter(torch.tensor(-4.0))
+
+        nn.init.zeros_(self.gate[-2].weight)
+        nn.init.zeros_(self.gate[-2].bias)
+
+    def forward(self, text_features1, text_features2):
+        f_base = self.v_to_r(text_features1, text_features2)
+        f_rev = self.r_to_v(text_features2, text_features1)
+
+        diff = torch.abs(f_base - f_rev)
+        prod = f_base * f_rev
+        gate_input = torch.cat([f_base, f_rev, diff, prod], dim=1)
+
+        g = self.gate(gate_input)
+
+        res_scale = self.max_res_scale * torch.sigmoid(self.res_scale_logit)
+        delta = g * (f_rev - f_base)
+
+        f_ts = f_base + res_scale * delta
+
+        return f_ts
+
 class Model(nn.Module):
     def __init__(self, num_classes, img_h, img_w):
         super(Model, self).__init__()
@@ -235,6 +376,7 @@ class Model(nn.Module):
         self.prompt_learner2 = PromptLearner2(num_classes, clip_model.dtype, clip_model.token_embedding)
         self.text_encoder = TextEncoder(clip_model)
         self.attention_fusion = AttentionFusion(1024)
+        #self.attention_fusion = SafeBiRAF(1024, max_res_scale=0.2)
 
 
     def forward(self, x1=None, x2=None, label1=None, label2=None, label=None, get_image=False, get_text=False,

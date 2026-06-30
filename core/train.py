@@ -126,6 +126,95 @@ def train_single_stage(base, loaders, fused_text_features, config, current_epoch
 
         features, cls_score = base.model(x1=rgb_imgs, x2=ir_imgs)
 
+        # n = features[1].shape[0] // 3
+        #
+        # rgb_features = features[0].squeeze().narrow(0, 0, n)
+        # ir_features = features[0].squeeze().narrow(0, 2 * n, n)
+        #
+        # rgb_attn_features = features[1].narrow(0, 0, n)
+        # ir_attn_features = features[1].narrow(0, 2 * n, n)
+        #
+        # image_features = torch.cat([rgb_attn_features, ir_attn_features], dim=0)
+        #
+        # rgb_text_features = base.model(label1=rgb_pids, get_text=True)
+        # ir_text_features = base.model(label2=ir_pids, get_text=True)
+        #
+        # text_features = torch.cat([rgb_text_features, ir_text_features], dim=0)
+        # target = torch.cat([rgb_pids, ir_pids], dim=0)
+        #
+        # text_features_fuse = base.model(label=target, get_fusion_text=True)
+        #
+        # loss_i2t_text = base.con_creiteron(image_features.detach(), text_features, target, target)
+        #
+        # loss_t2i_text = base.con_creiteron(text_features, image_features.detach(), target, target)
+        #
+        # loss_i2t_af = base.con_creiteron(image_features.detach(), text_features_fuse, target, target)
+        #
+        # loss_t2i_af = base.con_creiteron(text_features_fuse, image_features.detach(), target, target)
+        #
+        # text_loss = loss_i2t_text + loss_t2i_text
+        # af_loss = loss_i2t_af + loss_t2i_af
+        # text_af_loss = text_loss + af_loss
+        #
+        # base.model_optimizer_text.zero_grad()
+        # text_af_loss.backward()
+        #
+        # torch.nn.utils.clip_grad_norm_(
+        #     [p for n_name, p in base.model.named_parameters()
+        #      if ('prompt_learner' in n_name or 'attention_fusion' in n_name) and p.requires_grad],
+        #     max_norm=5.0
+        # )
+        #
+        # base.model_optimizer_text.step()
+        #
+        # with torch.no_grad():
+        #     text_features_fuse_new = base.model(label=target, get_fusion_text=True)
+        #
+        #     label_unique = torch.unique_consecutive(target)
+        #     for j, label in enumerate(label_unique):
+        #         fused_text_features[label] = text_features_fuse_new[4 * j]
+        #
+        # rgb_logits = rgb_attn_features @ fused_text_features.t().detach()
+        # ir_logits = ir_attn_features @ fused_text_features.t().detach()
+        #
+        # ide_loss = base.pid_creiteron(cls_score[0], pids)
+        # ide_loss_proj = base.pid_creiteron(cls_score[1], pids)
+        #
+        # triplet_loss = base.tri_creiteron(features[0].squeeze(), pids)
+        # triplet_loss_proj = base.tri_creiteron(features[1].squeeze(), pids)
+        #
+        # msel_loss = base.msel_creiteron(
+        #     torch.cat([rgb_features, ir_features], dim=0),
+        #     torch.cat([rgb_pids, ir_pids], dim=0)
+        # )
+        #
+        # msel_loss_proj = base.msel_creiteron(
+        #     torch.cat([rgb_attn_features, ir_attn_features], dim=0),
+        #     torch.cat([rgb_pids, ir_pids], dim=0)
+        # )
+        #
+        # rgb_i2t_ide_loss = base.pid_creiteron(rgb_logits, rgb_pids)
+        # ir_i2t_ide_loss = base.pid_creiteron(ir_logits, ir_pids)
+        #
+        # space_matching_loss = base.kl_creiteron(cls_score[0].narrow(0, 0, n), cls_score[0].narrow(0, 2 * n, n))
+        #
+        # space_matching_loss_att = base.kl_creiteron(cls_score[1].narrow(0, 0, n), cls_score[1].narrow(0, 2 * n, n))
+        #
+        # space_matching_loss_text = base.kl_creiteron(rgb_logits, ir_logits)
+        #
+        # image_loss = ide_loss + ide_loss_proj + \
+        #              (msel_loss + msel_loss_proj) + \
+        #              config.lambda1 * (triplet_loss + triplet_loss_proj) + \
+        #              config.lambda2 * rgb_i2t_ide_loss + \
+        #              config.lambda3 * ir_i2t_ide_loss + \
+        #              space_matching_loss + \
+        #              space_matching_loss_att + \
+        #              space_matching_loss_text
+        #
+        # base.model_optimizer_image.zero_grad()
+        # image_loss.backward()
+        # base.model_optimizer_image.step()
+
         rgb_text_features = base.model(label1=rgb_pids, get_text=True)
         ir_text_features = base.model(label2=ir_pids, get_text=True)
 
@@ -185,7 +274,6 @@ def train_single_stage(base, loaders, fused_text_features, config, current_epoch
                space_matching_loss + space_matching_loss_att + space_matching_loss_text
 
         loss = text_loss + af_loss + image_loss
-
         base.model_optimizer_text.zero_grad()
         base.model_optimizer_image.zero_grad()
         loss.backward()

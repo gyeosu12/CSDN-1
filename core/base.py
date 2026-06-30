@@ -296,18 +296,6 @@ class BaseSingleStage:
         params_image = []
         keys_image = []
         for key, value in self.model.named_parameters():
-            if 'prompt_learner1' in key:
-                value.requires_grad_(False)
-                continue
-            if 'prompt_learner2' in key:
-                value.requires_grad_(False)
-                continue
-            if 'attention_fusion' in key:
-                value.requires_grad_(False)
-                continue
-            if 'text_encoder' in key:
-                value.requires_grad_(False)
-                continue
             lr = self.learning_rate
             if 'classifier' in key:
                 lr = self.learning_rate * 2
