@@ -376,8 +376,12 @@ class Model(nn.Module):
         self.prompt_learner2 = PromptLearner2(num_classes, clip_model.dtype, clip_model.token_embedding)
         self.text_encoder = TextEncoder(clip_model)
         self.attention_fusion = AttentionFusion(1024)
-        #self.attention_fusion = SafeBiRAF(1024, max_res_scale=0.2)
-
+        # self.attention_fusion = BidirectionalReliabilityAttentionFusion(
+        #     embed_dim=1024,
+        #     dropout_rate=0.1,
+        #     reduction=4,
+        #     share_branch=True
+        # )
 
     def forward(self, x1=None, x2=None, label1=None, label2=None, label=None, get_image=False, get_text=False,
                 get_fusion_text=False):
